@@ -1,5 +1,5 @@
-OWNER RAOUL BIVOLARU
+#OWNER RAOUL BIVOLARU
 
-xcript - set of common javascript functions
+#xcript - set of common javascript functions
 
-Need jquery
+#Need jquery
