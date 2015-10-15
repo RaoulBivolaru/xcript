@@ -1,6 +1,32 @@
 
 (function(global, $){
 
+    var availableKeys = {
+
+        enter:       13,
+
+        ctrl:        17,
+
+        alt:         18,
+
+        shift:       16,
+
+        tab:         9,
+
+        escape:      27,
+
+        caps_lock:   20,
+
+        left_arrow:  37,
+
+        up_arrow:    38,
+
+        right_arrow: 39,
+
+        down_arrow:  40
+    };
+
+
     var xcript = function(selector){
         return new xcript.init(selector);
     };
@@ -53,7 +79,7 @@
         //Scroll to element
         scrollTo: function(difference){
 
-            var minus = difference || 50,
+            var minus = difference || 0,
                 $this = this.selector;
 
             $this.queue(function(){
@@ -67,7 +93,7 @@
             });
         },
 
-        //SlideFadeToggle
+        //Slide fade toggle
         slideFadeToggle: function(speed, easing, callback) {
 
             $this = this.selector;
@@ -119,7 +145,7 @@
         },
 
         //Read a file upload and return file data
-        // Support >= IE10
+        //Support >= IE10
         fileUpload: function(input, callback){
             if (input.files && input.files[0]) {
                 var reader = new FileReader();
@@ -130,7 +156,7 @@
             }
         },
 
-        //prepend to input a string
+        //Prepend to input a string
         prependToInput: function(stringValue){
             $('body').on({
                 'focus input': function(){
@@ -148,8 +174,138 @@
                     }
                 }
             }, this.selector);
+        },
+
+        //Make element square
+        //If width is pass, the element will get the height equals with the width and vice versa
+        //If element is pass, the element will take from that the proper width or height (in this situation the width and height can be true or false)
+        makeSquareElement: function(width, height, element){
+
+            var $width  = width  || '',
+                $height = height || '';
+
+            if($width){
+                this.selector.height(function(){
+                    return element ? element.width() : $width;
+                });
+            }
+
+            if($height){
+                this.selector.width(function(){
+                    return element ? element.height() : $height;
+                });
+            }
+
+            return this;
+
+        },
+
+        //Get event when pressing a keyboard key
+        onKeyPress: function(event, key, callback, prevent){
+
+            if(availableKeys.hasOwnProperty(key)){
+                this.selector.on(event, function(e){
+
+                    if(prevent){
+                        e.preventDefault();
+                    }
+
+                    if(e.keyCode === availableKeys[key]){
+                        if(callback){
+                            callback();
+                        }
+                    }
+                });
+            }
         }
 
+    };
+
+    //Format a given number or string in a correct number(with optional prefix)
+    xcript.formatNumber = function(num, prefix){
+
+        num += '';
+
+        var $prefix = prefix || '',
+
+            splitStr = num.split('.'),
+
+            splitLeft = splitStr[0],
+
+            splitRight = splitStr.length > 1 ? '.' + splitStr[1] : '',
+
+            regx = /(\d+)(\d{3})/;
+
+        while (regx.test(splitLeft)) {
+            splitLeft = splitLeft.replace(regx, '$1' + ',' + '$2');
+        }
+
+        return $prefix + splitLeft + splitRight;
+    };
+
+
+    //Ensure element is visible
+    //Check that a given task is complete
+    xcript.poll = function(fn, timeout, interval) {
+
+        var dfd = new Deferred(),
+
+            endTime = Number(new Date()) + (timeout || 2000),
+
+            $interval = interval || 100;
+
+        (function p() {
+            // If the condition is met, we're done!
+            if(fn()) {
+                dfd.resolve();
+            }
+            // If the condition isn't met but the timeout hasn't elapsed, go again
+            else if (Number(new Date()) < endTime) {
+                setTimeout(p, $interval);
+            }
+            // Didn't match and too much time, reject!
+            else {
+                dfd.reject(new Error('timed out for ' + fn + ': ' + arguments));
+            }
+        })();
+
+        return dfd.promise;
+    };
+
+    //Get absolute URL
+    xcript.getAbsoluteUrl = (function(){
+
+        var a;
+
+        return function(url) {
+            if(!a) a = document.createElement('a');
+            a.href = url;
+
+            return a.href;
+        };
+    }());
+
+    //Return a random float or integer number between given values
+    xcript.rand = function(min, max, integer){
+
+        var r = Math.random() * (max - min) + min;
+
+        return integer ? r|0 : r;
+    };
+
+    //Fire a function once
+    xcript.once = function(fn, context){
+
+        var result;
+
+        return function() {
+            if(fn) {
+                result = fn.apply(context || this, arguments);
+                fn = null;
+            }
+
+            return result;
+        };
     };
 
     //Get a parameter from url
@@ -165,26 +321,45 @@
         }
     };
 
-    //Debounce
-    xcript.debounce = function(func, wait, immediate){
+    //Debounce an event with a specific time set in milliseconds
+    xcript.debounce = function(func, wait){
 
-        var timeout;
+        var timeout, args, context, timestamp;
 
         return function() {
-            var context = this, args = arguments;
+
+            // save details of latest call
+            context = this;
+            args = [].slice.call(arguments, 0);
+            timestamp = new Date();
+
+            // this is where the magic happens
             var later = function() {
-                timeout = null;
-                if (!immediate) func.apply(context, args);
+
+                // how long ago was the last call
+                var last = (new Date()) - timestamp;
+
+                // if the latest call was less that the wait period ago
+                // then we reset the timeout to wait for the difference
+                if (last < wait) {
+                    timeout = setTimeout(later, wait - last);
+                } else { // or if not we can null out the timer and run the latest
+                    timeout = null;
+                    func.apply(context, args);
+                }
             };
-            var callNow = immediate && !timeout;
-            clearTimeout(timeout);
-            timeout = setTimeout(later, wait);
-            if (callNow) func.apply(context, args);
-        };
+
+            // we only need to set the timer now if one isn't already running
+            if (!timeout) {
+                timeout = setTimeout(later, wait);
+            }
+        }
     };
 
-    //Filter by Class name
-    xcript.pushTo = function(arr, oldArr){
+    //Push to array
+    xcript.pushTo = function(oldArr){
+        var arr = [];
+
         $.each(oldArr, function(index, value) {
             arr.push(value);
         });
@@ -192,7 +367,7 @@
         return arr;
     };
 
-    //Mutate each value from array and push to new array
+    //Mutate each value from array(optional) and push to new array
     xcript.mapToArray = function(arr, fn){
 
         var newArr = [];
@@ -214,14 +389,13 @@
             type: type,
             data: data
         });
-    },
+    };
 
     xcript.init = function(selector){
         this.selector = $(selector);
     };
 
     xcript.init.prototype = xcript.prototype;
-
 
     //Save to global object xcript
     global.xcript = global.x = xcript;
