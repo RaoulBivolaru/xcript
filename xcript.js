@@ -1,4 +1,4 @@
-
+f
 
 (function(global, $){
 
@@ -70,10 +70,19 @@
 
         //SlideFadeToggle
         slideFadeToggle: function(speed, easing, callback) {
-            return this.selector.animate({
-                opacity: 'toggle',
-                height: 'toggle'
-            }, speed, easing, callback);
+
+            $this = this.selector;
+
+            $this.queue(function() {
+
+                $this.animate({
+                    opacity: 'toggle',
+                    height: 'toggle'
+                }, speed, easing, callback);
+
+                $(this).dequeue();
+            });
+
         },
 
         //Disable scroll outside the hover element
@@ -85,6 +94,61 @@
                 this.scrollTop += ( delta < 0 ? 1 : -1 ) * 30;
                 e.preventDefault();
             });
+        },
+
+        //Render a string date to local date
+        renderDateToLocal: function(date){
+            var newDate = new Date(date);
+
+            var offset = new Date().getTimezoneOffset(),
+                minutes = Math.abs(offset),
+                hours = Math.floor(minutes / 60),
+                prefix = offset < 0 ? "-" : "+";
+
+            // Check if timezone offset is -/+
+            prefix === "-" ? newDate.setHours(newDate.getHours() + hours) : newDate.setHours(newDate.getHours() - hours);
+
+            var dates = {
+                month:   newDate.getMonth()   < 10 ? '0'+ (newDate.getMonth() + 1) : newDate.getMonth() + 1,
+                day:     newDate.getDate()    < 10 ? '0'+ newDate.getDate()        : newDate.getDate(),
+                hours:   newDate.getHours()   < 10 ? '0'+ newDate.getHours()       : newDate.getHours(),
+                minutes: newDate.getMinutes() < 10 ? '0'+ newDate.getMinutes()     : newDate.getMinutes(),
+                seconds: newDate.getSeconds() < 10 ? '0'+ newDate.getSeconds()     : newDate.getSeconds()
+            };
+
+            return this.selector.html(dates.month + "/" + dates.day + "/" + newDate.getFullYear() + ' ' + dates.hours + ':' + dates.minutes + ':' + dates.seconds);
+        },
+
+        //Read a file upload and return file data
+        // Support >= IE10
+        fileUpload: function(input, callback){
+            if (input.files && input.files[0]) {
+                var reader = new FileReader();
+                reader.onload = function (e) {
+                    callback(e.target);
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        },
+
+        //prepend to input a string
+        prependToInput: function(stringValue){
+            $('body').on({
+                'focus input': function(){
+                    var _this = $(this);
+                    if(_this.val().indexOf(stringValue) == -1){
+                        _this.val(function(index, val){
+                            return val == stringValue ? stringValue + val : stringValue;
+                        })
+                    }
+                },
+                'blur': function(){
+                    var _this = $(this);
+                    if(_this.val() === stringValue){
+                        _this.val("");
+                    }
+                }
+            }, this.selector);
         }
 
     };
