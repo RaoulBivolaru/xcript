@@ -1,6 +1,10 @@
 
 (function(global, $){
 
+    if(!$){
+        return false;
+    }
+
     var availableKeys = {
 
         enter:       13,
@@ -30,8 +34,7 @@
         mobile: '(max-width : 479px)',
         tablet: '(min-width : 480px) and (max-width : 1023px)',
         desktop:'(min-width : 1024px)'
-    }
-
+    };
 
     var xcript = function(selector){
         return new xcript.init(selector);
@@ -118,7 +121,7 @@
 
         //Disable scroll outside the hover element
         disableScrollOutside: function(){
-            this.selector.on( 'mousewheel DOMMouseScroll', function (e) {
+            this.selector.on('mousewheel DOMMouseScroll', function (e) {
                 var x = e.originalEvent,
                     delta = x.wheelDelta || -x.detail;
 
@@ -258,8 +261,57 @@
             if(type === 'remove'){
                 this.selector.remove();
             }
-        }
+        },
 
+        //Clear a file input after event
+        clearFileInput: function(){
+            this.selector.replaceWith(this.selector.val('').clone(true));
+        },
+
+        //Get an Image native width and height
+        getNativeImage: function(){
+
+            var theImage = new Image();
+            theImage.src = this.selector.attr('src');
+
+            return {
+                width: theImage.width,
+                height: theImage.height
+            }
+        }
+    };
+
+    //Get Internet Explorer version
+    xcript.getIEVersion = function(){
+
+        var navigator = navigator.userAgent.toLowerCase();
+
+        return (navigator.indexOf('msie') != -1) ? parseInt(navigator.split('msie')[1]) : false;
+    };
+
+    //Get sum from array
+    xcript.getSum = function(arr){
+        return arr.reduce(function(pv, cv) { return pv + cv; }, 0);
+    };
+
+    //Function to calculate distance between element and mouse
+    xcript.calculateDistance = function(elem, mouseX, mouseY){
+        return Math.floor(Math.sqrt(
+            Math.pow(mouseX - (elem.offset().left+(elem.width()/2)), 2) +
+            Math.pow(mouseY - (elem.offset().top+(elem.height()/2)), 2)
+        ));
+    };
+
+    //Set mousemove event and calculate distance between mouse cursor and element
+    //Uses x.calculateDistance function
+    xcript.getDistanceFromCursor = function(element){
+
+        $(document).on('mousemove', function(e){
+            var mX = e.pageX,
+                mY = e.pageY;
+
+            return x.calculateDistance(element, mX, mY);
+        });
     };
 
     //Set Modernizr's media queries
@@ -447,8 +499,52 @@
                 fn(arr[i])
             )
         }
-
         return newArr;
+    };
+
+    //Remove duplicate values from an array
+    xcript.removeDuplicates = function(arr){
+
+        var i = 0,
+            arrLength = arr.length;
+
+        while (i < arrLength) {
+            var current = arr[i];
+
+            for (k = arrLength; k > i; k--) {
+                if (arr[k] === current) {
+                    arr.splice(k,1);
+                }
+            }
+            i++;
+        }
+        return arr;
+    };
+
+    //Create html tags like select ul li
+    //Usage: x.createMenu([array of items], ['select', 'option'])
+    xcript.createMenu = function(items, tags){
+
+        var $tags = tags || ['ul', 'li']; // default tags
+
+        var parent = $tags[0],
+            child = $tags[1],
+            item, value;
+
+        for (var i = 0, l = items.length; i < l; i++) {
+            item = items[i];
+            // Separate item and value if value is present
+            if (/:/.test(item)) {
+                item = items[i].split(':')[0];
+                value = items[i].split(':')[1];
+            }
+            // Wrap the item in tag
+            items[i] = '<'+ child +' '+
+            (value && 'value="'+value+'"') +'>'+ // add value if present
+            item +'</'+ child +'>';
+        }
+
+        return '<'+ parent +'>'+ items.join('') +'</'+ parent +'>';
     };
 
     //Normal ajax call
