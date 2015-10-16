@@ -265,21 +265,24 @@
     //Set Modernizr's media queries
     xcript.modernizr = function(mobile, tablet, desktop){
         if(Modernizr){
-            if (Modernizr.mq(mediaQueries.mobile) && screenType != 'mobile') {
+
+            global.screenType = '';
+
+            if (Modernizr.mq(mediaQueries.mobile) && global.screenType != 'mobile') {
                 global.screenType = 'mobile';
 
                 if(mobile){
                     mobile();
                 }
 
-            } else if (Modernizr.mq(mediaQueries.tablet) && screenType != 'tablet') {
+            } else if (Modernizr.mq(mediaQueries.tablet) && global.screenType != 'tablet') {
                 global.screenType = 'tablet';
 
                 if(tablet){
                     tablet();
                 }
 
-            } else if (!Modernizr.mq(mediaQueries.mobile) && !Modernizr.mq(mediaQueries.tablet) && screenType != 'desktop') {
+            } else if (!Modernizr.mq(mediaQueries.mobile) && !Modernizr.mq(mediaQueries.tablet) && global.screenType != 'desktop') {
                 global.screenType = 'desktop';
 
                 if(desktop){
