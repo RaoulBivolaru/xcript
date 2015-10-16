@@ -26,6 +26,12 @@
         down_arrow:  40
     };
 
+    var mediaQueries = {
+        mobile: '(max-width : 479px)',
+        tablet: '(min-width : 480px) and (max-width : 1023px)',
+        desktop:'(min-width : 1024px)'
+    }
+
 
     var xcript = function(selector){
         return new xcript.init(selector);
@@ -146,13 +152,20 @@
 
         //Read a file upload and return file data
         //Support >= IE10
-        fileUpload: function(input, callback){
+        fileUpload: function(input, callback, size){
             if (input.files && input.files[0]) {
+
+                var file = input.files[0];
+
+                if(size && file > (1048576 * size)) {
+                    return false;
+                }
+
                 var reader = new FileReader();
                 reader.onload = function (e) {
                     callback(e.target);
                 };
-                reader.readAsDataURL(input.files[0]);
+                reader.readAsDataURL(file);
             }
         },
 
@@ -217,8 +230,63 @@
                     }
                 });
             }
+        },
+
+        //Limit a string to given chars limit
+        limitChars: function(limit, start){
+            var text = this.selector.text();
+
+            if(text.length > limit){
+                this.selector.html(text.substring((start ? start : 0), limit));
+            }
+
+            return this;
+        },
+
+        //Loader toggle
+        //x(loader selector) - (this can be cached inside a variable and call loaderToggle on that variable).loaderToggle(type)
+        loaderToggle: function(type){
+
+            if(type === 'show'){
+                this.selector.show();
+            }
+
+            if(type === 'hide'){
+                this.selector.hide();
+            }
+
+            if(type === 'remove'){
+                this.selector.remove();
+            }
         }
 
+    };
+
+    //Set Modernizr's media queries
+    xcript.modernizr = function(mobile, tablet, desktop){
+        if(Modernizr){
+            if (Modernizr.mq(mediaQueries.mobile) && screenType != 'mobile') {
+                global.screenType = 'mobile';
+
+                if(mobile){
+                    mobile();
+                }
+
+            } else if (Modernizr.mq(mediaQueries.tablet) && screenType != 'tablet') {
+                global.screenType = 'tablet';
+
+                if(tablet){
+                    tablet();
+                }
+
+            } else if (!Modernizr.mq(mediaQueries.mobile) && !Modernizr.mq(mediaQueries.tablet) && screenType != 'desktop') {
+                global.screenType = 'desktop';
+
+                if(desktop){
+                    desktop();
+                }
+            }
+        }
     };
 
     //Format a given number or string in a correct number(with optional prefix)
@@ -244,8 +312,7 @@
     };
 
 
-    //Ensure element is visible
-    //Check that a given task is complete
+    //Ensure element is visible / Check that a given task is complete
     xcript.poll = function(fn, timeout, interval) {
 
         var dfd = new Deferred(),
