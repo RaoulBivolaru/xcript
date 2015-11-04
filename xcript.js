@@ -67,6 +67,17 @@
             return this;
         },
 
+        toggleClassOnHover:function(className){
+
+            var _this = this.selector;
+
+            _this.hover(function(){
+                _this.addClass(className);
+            }, function(){
+                _this.removeClass(className);
+            });
+        },
+
         //Check if element exist in the page
         ifExist: function(){
             return this.selector.length !== 0;
@@ -86,9 +97,11 @@
         },
 
         //Scroll to element
-        scrollTo: function(difference){
+        scrollToElement: function(difference){
 
-            var minus = difference || 0,
+            var
+                minus = difference || 0,
+
                 $this = this.selector;
 
             $this.queue(function(){
@@ -131,8 +144,8 @@
         },
 
         //Render a string date to local date
-        renderDateToLocal: function(date){
-            var newDate = new Date(date);
+        renderDateToLocal: function(){
+            var newDate = new Date(this.selector.text());
 
             var offset = new Date().getTimezoneOffset(),
                 minutes = Math.abs(offset),
@@ -195,20 +208,24 @@
         //Make element square
         //If width is pass, the element will get the height equals with the width and vice versa
         //If element is pass, the element will take from that the proper width or height (in this situation the width and height can be true or false)
-        makeSquareElement: function(width, height, element){
+        changeWidthOrHeight: function(width, height, element){
 
-            var $width  = width  || '',
-                $height = height || '';
+            var
+                $width  = width  || '',
 
-            if($width){
-                this.selector.height(function(){
-                    return element ? element.width() : $width;
+                $height = height || '',
+
+                $element = $(element) || '';
+
+            if($width || $element){
+                this.selector.width(function(){
+                    return $width ? $width : $element.width();
                 });
             }
 
-            if($height){
-                this.selector.width(function(){
-                    return element ? element.height() : $height;
+            if($height || $element){
+                this.selector.height(function(){
+                    return $height ? $height : $element.height();
                 });
             }
 
@@ -216,22 +233,25 @@
 
         },
 
-        //Get event when pressing a keyboard key
-        onKeyPress: function(event, key, callback, prevent){
+        //Set same size to array of elements(width or height, after the biggest one)
+        setSameSize: function(item, height){
 
-            if(availableKeys.hasOwnProperty(key)){
-                this.selector.on(event, function(e){
+            var
+                afterHeight = height || false,
 
-                    if(prevent){
-                        e.preventDefault();
-                    }
+                elements = this.selector.find(item),
 
-                    if(e.keyCode === availableKeys[key]){
-                        if(callback){
-                            callback();
-                        }
-                    }
-                });
+                max = Math.max.apply(null, elements.map(function(){
+
+                    var _this = $(this);
+
+                    return afterHeight ? _this.height() : _this.width();
+                }).get());
+
+            if(afterHeight){
+                elements.height(max);
+            }else{
+                elements.width(max);
             }
         },
 
@@ -281,10 +301,29 @@
         }
     };
 
+    //Get event when pressing a keyboard key
+    xcript.onKeyPress = function(event, key, callback, prevent){
+
+        if(availableKeys.hasOwnProperty(key)){
+            $(global).on(event, function(e){
+
+                if(prevent){
+                    e.preventDefault();
+                }
+
+                if(e.keyCode === availableKeys[key]){
+                    if(callback){
+                        callback();
+                    }
+                }
+            });
+        }
+    };
+
     //Get Internet Explorer version
     xcript.getIEVersion = function(){
 
-        var navigator = navigator.userAgent.toLowerCase();
+        var navigator = global.navigator.userAgent.toLowerCase();
 
         return (navigator.indexOf('msie') != -1) ? parseInt(navigator.split('msie')[1]) : false;
     };
@@ -294,7 +333,7 @@
         return arr.reduce(function(pv, cv) { return pv + cv; }, 0);
     };
 
-    //Function to calculate distance between element and mouse
+    //Function to calculate distance between element and mouse (use mousemove event to get mouse position)
     xcript.calculateDistance = function(elem, mouseX, mouseY){
         return Math.floor(Math.sqrt(
             Math.pow(mouseX - (elem.offset().left+(elem.width()/2)), 2) +
@@ -302,45 +341,43 @@
         ));
     };
 
-    //Set mousemove event and calculate distance between mouse cursor and element
-    //Uses x.calculateDistance function
-    xcript.getDistanceFromCursor = function(element){
-
-        $(document).on('mousemove', function(e){
-            var mX = e.pageX,
-                mY = e.pageY;
-
-            return x.calculateDistance(element, mX, mY);
-        });
-    };
-
     //Set Modernizr's media queries
     xcript.modernizr = function(mobile, tablet, desktop){
-        if(Modernizr){
+        if(global.Modernizr){
 
             global.screenType = '';
 
-            if (Modernizr.mq(mediaQueries.mobile) && global.screenType != 'mobile') {
-                global.screenType = 'mobile';
+            var modernizrInit = function(){
+                if (global.Modernizr.mq(mediaQueries.mobile) && global.screenType != 'mobile') {
+                    global.screenType = 'mobile';
 
-                if(mobile){
-                    mobile();
+                    if(mobile){
+                        mobile();
+                    }
+
+                } else if (global.Modernizr.mq(mediaQueries.tablet) && global.screenType != 'tablet') {
+                    global.screenType = 'tablet';
+
+                    if(tablet){
+                        tablet();
+                    }
+
+                } else if (!global.Modernizr.mq(mediaQueries.mobile) && !global.Modernizr.mq(mediaQueries.tablet) && global.screenType != 'desktop') {
+                    global.screenType = 'desktop';
+
+                    if(desktop){
+                        desktop();
+                    }
                 }
+            };
 
-            } else if (Modernizr.mq(mediaQueries.tablet) && global.screenType != 'tablet') {
-                global.screenType = 'tablet';
+            modernizrInit();
 
-                if(tablet){
-                    tablet();
-                }
-
-            } else if (!Modernizr.mq(mediaQueries.mobile) && !Modernizr.mq(mediaQueries.tablet) && global.screenType != 'desktop') {
-                global.screenType = 'desktop';
-
-                if(desktop){
-                    desktop();
-                }
-            }
+            x.debounce(
+                $(global).on('resize', function(){
+                    modernizrInit();
+                }), 100
+            )
         }
     };
 
@@ -370,7 +407,7 @@
     //Ensure element is visible / Check that a given task is complete
     xcript.poll = function(fn, timeout, interval) {
 
-        var dfd = new Deferred(),
+        var dfd = new $.Deferred(),
 
             endTime = Number(new Date()) + (timeout || 2000),
 
@@ -476,17 +513,6 @@
                 timeout = setTimeout(later, wait);
             }
         }
-    };
-
-    //Push to array
-    xcript.pushTo = function(oldArr){
-        var arr = [];
-
-        $.each(oldArr, function(index, value) {
-            arr.push(value);
-        });
-
-        return arr;
     };
 
     //Mutate each value from array(optional) and push to new array
