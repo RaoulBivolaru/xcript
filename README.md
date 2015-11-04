@@ -4,8 +4,6 @@ Set of common javascript functions
 
 ## Change classes for an element
 
-- Example
-
 ```
 x('element').addClassIfNot('className');
 ```
@@ -276,4 +274,4 @@ x.ajax(url, method, type, data)
 
 ## License
 
-A short snippet describing the license (MIT, Apache, etc.)
+MIT License
