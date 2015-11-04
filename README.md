@@ -54,7 +54,7 @@ Using this you can disable the scroll outside a scrolling element
 ```
 <p class="date">12/23/2015 05:24 AM</p>
 
-x('.date').disableScrollOutside();
+x('.date').renderDateToLocal();
 ```
 
 This will replace the current date with the new local one
@@ -172,7 +172,7 @@ $(document).on('mousemove', function(e){
 });
 ```
 
-## Set modernizr for desktop/table/mobile
+## Set modernizr for desktop/tablet/mobile
 
 ```
 x.modernizr(
