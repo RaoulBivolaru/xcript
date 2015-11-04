@@ -168,21 +168,25 @@
 
         //Read a file upload and return file data
         //Support >= IE10
-        fileUpload: function(input, callback, size){
-            if (input.files && input.files[0]) {
+        fileUpload: function(callback, size){
 
-                var file = input.files[0];
+            this.selector.on('change', function(){
+                if (this.files && this.files[0]) {
 
-                if(size && file > (1048576 * size)) {
-                    return false;
+                    var file = this.files[0];
+
+                    if(size && file.size > (1048576 * size)) {
+                        return false;
+                    }
+
+                    var reader = new FileReader();
+                    reader.onload = function (e) {
+                        callback(e.target);
+                    };
+                    reader.readAsDataURL(file);
                 }
+            });
 
-                var reader = new FileReader();
-                reader.onload = function (e) {
-                    callback(e.target);
-                };
-                reader.readAsDataURL(file);
-            }
         },
 
         //Prepend to input a string
@@ -205,9 +209,7 @@
             }, this.selector);
         },
 
-        //Make element square
-        //If width is pass, the element will get the height equals with the width and vice versa
-        //If element is pass, the element will take from that the proper width or height (in this situation the width and height can be true or false)
+        //Change width or height for an element by passing the width/height or an element
         changeWidthOrHeight: function(width, height, element){
 
             var
@@ -266,23 +268,6 @@
             return this;
         },
 
-        //Loader toggle
-        //x(loader selector) - (this can be cached inside a variable and call loaderToggle on that variable).loaderToggle(type)
-        loaderToggle: function(type){
-
-            if(type === 'show'){
-                this.selector.show();
-            }
-
-            if(type === 'hide'){
-                this.selector.hide();
-            }
-
-            if(type === 'remove'){
-                this.selector.remove();
-            }
-        },
-
         //Clear a file input after event
         clearFileInput: function(){
             this.selector.replaceWith(this.selector.val('').clone(true));
@@ -298,8 +283,58 @@
                 width: theImage.width,
                 height: theImage.height
             }
+        },
+
+        //Loader toggle
+        loader: function(type, settings){
+
+            var
+                _this = this.selector,
+
+                $settings = settings || {},
+
+                Loader = function(){
+                    this.src          = $settings.hasOwnProperty('src') ? $settings.src : '';
+                    this.wrapperClass = $settings.wrapper || 'x-loader-wrapper';
+                    this.imageClass   = $settings.image || 'x-loader';
+                };
+
+            Loader.prototype = {
+                show: function(){
+                    _this.append('<div class="'+ this.wrapperClass +'"><img src="'+ this.src +'" alt="" class="'+ this.imageClass +'"></div>')
+                },
+                hide: function(){
+                    _this.find('.x-loader-wrapper').fadeOut().remove();
+                },
+                enable: function(){
+                    _this.removeAttr('disabled').removeClass('disabled');
+                },
+                disable: function(){
+                    _this.attr('disabled', 'disabled').addClass('disabled');
+                },
+                hideAll: function(){
+                    $('.x-loader-wrapper').fadeOut().remove();
+                }
+            };
+
+            var loaderInit =  new Loader();
+
+            return loaderInit[type]();
+        },
+
+        //Function to calculate distance between element and mouse
+        calculateDistance: function(mouseX, mouseY){
+
+            var _this = this.selector;
+
+            return Math.floor(Math.sqrt(
+                Math.pow(mouseX - (_this.offset().left+(_this.width()/2)), 2) +
+                Math.pow(mouseY - (_this.offset().top+(_this.height()/2)), 2)
+            ));
         }
+
     };
+
 
     //Get event when pressing a keyboard key
     xcript.onKeyPress = function(event, key, callback, prevent){
@@ -331,14 +366,6 @@
     //Get sum from array
     xcript.getSum = function(arr){
         return arr.reduce(function(pv, cv) { return pv + cv; }, 0);
-    };
-
-    //Function to calculate distance between element and mouse (use mousemove event to get mouse position)
-    xcript.calculateDistance = function(elem, mouseX, mouseY){
-        return Math.floor(Math.sqrt(
-            Math.pow(mouseX - (elem.offset().left+(elem.width()/2)), 2) +
-            Math.pow(mouseY - (elem.offset().top+(elem.height()/2)), 2)
-        ));
     };
 
     //Set Modernizr's media queries
@@ -404,7 +431,7 @@
     };
 
 
-    //Ensure element is visible / Check that a given task is complete
+    //Check that a given task is complete
     xcript.poll = function(fn, timeout, interval) {
 
         var dfd = new $.Deferred(),
