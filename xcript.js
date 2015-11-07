@@ -304,7 +304,7 @@
                     _this.append('<div class="'+ this.wrapperClass +'"><img src="'+ this.src +'" alt="" class="'+ this.imageClass +'"></div>')
                 },
                 hide: function(){
-                    _this.find('.x-loader-wrapper').fadeOut().remove();
+                    _this.find('.' + this.wrapperClass).fadeOut().remove();
                 },
                 enable: function(){
                     _this.removeAttr('disabled').removeClass('disabled');
@@ -313,7 +313,7 @@
                     _this.attr('disabled', 'disabled').addClass('disabled');
                 },
                 hideAll: function(){
-                    $('.x-loader-wrapper').fadeOut().remove();
+                    $('.' + this.wrapperClass).fadeOut().remove();
                 }
             };
 
@@ -616,7 +616,7 @@
 
     xcript.init.prototype = xcript.prototype;
 
-    //Save to global object xcript
+    //Save xcript to global object
     global.xcript = global.x = xcript;
 
 }(window, $));

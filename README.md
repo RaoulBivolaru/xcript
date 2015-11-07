@@ -115,7 +115,7 @@ If height is set to true, the biggest height is going to be use. If not, the wid
 x('element').limitChars(limit, start);
 ```
 
-limit - set the max characters that should be visible
+limit - set the max characters that should be visible.
 start - set the start(from where the split should start). This is optional
 
 ## Loader
@@ -197,6 +197,8 @@ x.modernizr(null,
     }, null);
 }
 ```
+
+You will also get a global variable called screenType that is going to be set to desktop/tablet/mobile (depends on screen resolution)
 
 ## Format a given number
 
