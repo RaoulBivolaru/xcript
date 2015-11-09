@@ -1,4 +1,4 @@
-
+//xcript.js @Raoul Bivolaru
 (function(global, $){
 
     if(!$){
